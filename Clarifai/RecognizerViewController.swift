@@ -44,8 +44,10 @@ class RecognizerViewController: UIViewController {
             imagePreviewView.image = image
             
             clarifai.tag(image, completion: { (results, error) in
-                let tag = results?.tags![0]
-                self.setupResultsView((tag?.labels)!)
+                if error == nil {
+                    let tag = results?.tags![0]
+                    self.setupResultsView((tag?.labels)!)
+                }
             })
         }
         
@@ -56,8 +58,10 @@ class RecognizerViewController: UIViewController {
             }
             
             clarifai.tag(url, completion: { (results, error) in
-                let tag = results?.tags![0]
-                self.setupResultsView((tag?.labels)!)
+                if error == nil {
+                    let tag = results?.tags![0]
+                    self.setupResultsView((tag?.labels)!)
+                }
             })
         }
     }

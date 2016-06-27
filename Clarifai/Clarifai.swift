@@ -1,5 +1,5 @@
 import UIKit
-import AFNetworking
+import Alamofire
 
 /** Provides access to Clarifai image recognition services */
 class Clarifai {
@@ -7,16 +7,10 @@ class Clarifai {
     var clientSecret: String
     var accessToken: String?
     var accessTokenExpiration: NSDate?
-    var httpManager: AFHTTPSessionManager
     
     init(clientID: String, clientSecret: String) {
         self.clientID = clientID
         self.clientSecret = clientSecret
-        
-        self.httpManager = AFHTTPSessionManager()
-        self.httpManager.operationQueue.maxConcurrentOperationCount = 4
-        self.httpManager.responseSerializer = AFJSONResponseSerializer()
-        self.httpManager.responseSerializer.acceptableContentTypes = ["application/json"]
         
         self.loadAccessToken()
     }
@@ -94,7 +88,6 @@ class Clarifai {
         } else {
             self.accessToken = userDefaults.stringForKey(ClarifaiKeys.AccessToken)!
             self.accessTokenExpiration = userDefaults.objectForKey(ClarifaiKeys.AccessTokenExpiration)! as? NSDate
-            self.setTokenHeader()
         }
     }
     
@@ -110,7 +103,6 @@ class Clarifai {
             
             self.accessToken = accessToken
             self.accessTokenExpiration = expiration
-            self.setTokenHeader()
         }
     }
     
@@ -130,51 +122,43 @@ class Clarifai {
         if self.accessToken != nil && self.accessTokenExpiration != nil && self.accessTokenExpiration?.timeIntervalSinceNow > ClarifaiKeys.MinTokenLifetime {
             handler(error: nil)
         } else {
-            let params: [NSObject : AnyObject] = [
+            let params: Dictionary<String, AnyObject> = [
                 "grant_type": "client_credentials",
                 "client_id": self.clientID,
                 "client_secret": self.clientSecret
             ]
             
-            self.httpManager.POST(ClarifaiKeys.BaseURL.stringByAppendingString("/token"), parameters: params, progress: nil, success: { (task, response) in
-                let tokenResponse = ClarifaiAccessTokenResponse(responseJSON: response as! NSDictionary)
-                self.saveAccessToken(tokenResponse)
-                
-                handler(error: nil)
-            }, failure: { (task, error) in
-                let response = task!.response as! NSHTTPURLResponse
-                
-                if response.statusCode >= 400 {
-                    let responseBody = try! NSJSONSerialization.JSONObjectWithData(error.userInfo["com.alamofire.serialization.response.error.data"] as! NSData, options: [])
-                    handler(error: self.httpError(task!, description: error.localizedDescription, body: responseBody as? Dictionary<String, String>))
-                } else {
-                    handler(error: error)
+            Alamofire.request(.POST, ClarifaiKeys.BaseURL.stringByAppendingString("/token"), parameters: params)
+                .validate()
+                .responseJSON() { response in
+                    switch response.result {
+                    case .Success(let result):
+                        let tokenResponse = ClarifaiAccessTokenResponse(responseJSON: result as! NSDictionary)
+                        self.saveAccessToken(tokenResponse)
+                    case .Failure(let error):
+                        handler(error: error)
+                    }
                 }
-            })
         }
-    }
-    
-    private func setTokenHeader() {
-        self.httpManager.requestSerializer.setValue("Bearer \(self.accessToken!)", forHTTPHeaderField: "Authorization")
     }
     
     // MARK: Helper Methods
     
     private func recognize(type: ClarifaiRecognizeType, data: Array<AnyObject>, dataType: ClarifaiDataType, model: ClarifaiTagModel?, completion: (ClarifaiResponse?, NSError?) -> Void) {
-        self.processRecognition(type, bodyBlock: { (formData) in
+        self.processRecognition(type, formData: { (formData) in
             switch type {
             case .Tag:
                 switch model! {
                 case .General:
-                    formData.appendPartWithFormData("general-v1.3".dataUsingEncoding(NSUTF8StringEncoding)!, name: "model")
+                    formData.appendBodyPart(data: "general-v1.3".dataUsingEncoding(NSUTF8StringEncoding)!, name: "model")
                 case .NSFW:
-                    formData.appendPartWithFormData("nsfw-v1.0".dataUsingEncoding(NSUTF8StringEncoding)!, name: "model")
+                    formData.appendBodyPart(data: "nsfw-v1.0".dataUsingEncoding(NSUTF8StringEncoding)!, name: "model")
                 case .Weddings:
-                    formData.appendPartWithFormData("weddings-v1.0".dataUsingEncoding(NSUTF8StringEncoding)!, name: "model")
+                    formData.appendBodyPart(data: "weddings-v1.0".dataUsingEncoding(NSUTF8StringEncoding)!, name: "model")
                 case .Travel:
-                    formData.appendPartWithFormData("travel-v1.0".dataUsingEncoding(NSUTF8StringEncoding)!, name: "model")
+                    formData.appendBodyPart(data: "travel-v1.0".dataUsingEncoding(NSUTF8StringEncoding)!, name: "model")
                 case .Food:
-                    formData.appendPartWithFormData("food-items-v0.1".dataUsingEncoding(NSUTF8StringEncoding)!, name: "model")
+                    formData.appendBodyPart(data: "food-items-v0.1".dataUsingEncoding(NSUTF8StringEncoding)!, name: "model")
                 }
             // Disabled until support for Color at multiop endpoint is available
             // case .Color:
@@ -190,21 +174,20 @@ class Clarifai {
                     let scaledImage = UIGraphicsGetImageFromCurrentImageContext()
                     UIGraphicsEndImageContext()
                     
-                    formData.appendPartWithFileData(UIImageJPEGRepresentation(scaledImage, 0.9)!, name: "encoded_image", fileName: "image.jpg", mimeType: "image/jpeg")
+                    formData.appendBodyPart(data: UIImageJPEGRepresentation(scaledImage, 0.9)!, name: "encoded_image", fileName: "image.jpg", mimeType: "image/jpeg")
                 }
             case .URL:
                 for url in data as! Array<String> {
-                    formData.appendPartWithFormData(url.dataUsingEncoding(NSUTF8StringEncoding)!, name: "url")
+                    formData.appendBodyPart(data: url.dataUsingEncoding(NSUTF8StringEncoding)!, name: "url")
                 }
             }
         }, completion: completion)
     }
     
-    private func processRecognition(type: ClarifaiRecognizeType, bodyBlock: (formData: AFMultipartFormData) -> Void, completion: (ClarifaiResponse?, NSError?) -> Void) {
+    private func processRecognition(type: ClarifaiRecognizeType, formData: (formData: MultipartFormData) -> Void, completion: (ClarifaiResponse?, NSError?) -> Void) {
         self.validateAccessToken { (error) in
             if error != nil {
-                completion(nil, error)
-                return
+                return completion(nil, error)
             }
             
             var operationType: String
@@ -217,41 +200,28 @@ class Clarifai {
             //     operationType = "color"
             }
             
-            let params: [NSObject : AnyObject] = [
-                "op": operationType,
-            ]
-            
-            self.httpManager.POST(ClarifaiKeys.BaseURL.stringByAppendingString("/multiop"), parameters: params, constructingBodyWithBlock: bodyBlock, progress: nil, success: { (task, response) in
-                let results = ClarifaiResponse(type: type, dictionary: response as! [NSObject : AnyObject])
-                completion(results, nil)
-            }, failure: { (task, error) in
-                let response = task!.response as! NSHTTPURLResponse
-                var returnedError: NSError
-                
-                if response.statusCode >= 400 {
-                    let responseBody = try! NSJSONSerialization.JSONObjectWithData(error.userInfo["com.alamofire.serialization.response.error.data"] as! NSData, options: [])
-                    returnedError = self.httpError(task!, description: error.localizedDescription, body: responseBody as? Dictionary<String, String>)
-                } else {
-                    returnedError = error
+            Alamofire.upload(.POST, ClarifaiKeys.BaseURL.stringByAppendingString("/multiop"), headers: [
+                "Authorization": "Bearer \(self.accessToken!)"
+            ], multipartFormData: { multipartFormData in
+                multipartFormData.appendBodyPart(data: operationType.dataUsingEncoding(NSUTF8StringEncoding)!, name: "op")
+                formData(formData: multipartFormData)
+            }, encodingCompletion: { (encodingResult) in
+                switch encodingResult {
+                case .Success(let upload, _, _):
+                    upload.validate().responseJSON { response in
+                        switch response.result {
+                        case .Success(let result):
+                            let results = ClarifaiResponse(type: type, dictionary: result as! Dictionary<NSObject, AnyObject>)
+                            completion(results, nil)
+                        case .Failure(let error):
+                            completion(nil, error)
+                        }
+                    }
+                case .Failure(let encodingError):
+                    print(encodingError)
                 }
-                
-                if response.statusCode == 401 {
-                    self.invalidateAccessToken()
-                }
-                
-                completion(nil, returnedError)
             })
         }
-    }
-    
-    private func httpError(task: NSURLSessionTask, description: String?, body: Dictionary<String, String>?) -> NSError {
-        let response = task.response as! NSHTTPURLResponse
-        
-        return NSError(domain: ClarifaiKeys.ErrorDomain, code: response.statusCode, userInfo: [
-            "url": (task.currentRequest?.URL?.absoluteString)!,
-            "description": description ?? "HTTP Status \(Int(response.statusCode))",
-            "body": (body != nil ? body : nil)!
-        ])
     }
     
 }
@@ -325,13 +295,13 @@ class ClarifaiTag: NSObject {
 
 // This is not complete
 // Won't complete until support for Color at multiop endpoint is available
-//class ClarifaiColor: NSObject {
-//    var documentID: String
-//    
-//    init(dictionary dict: [NSObject : AnyObject]) {
-//        self.documentID = dict["docid_str"] as! String
-//    }
-//}
+class ClarifaiColor: NSObject {
+    var documentID: String
+    
+    init(dictionary dict: [NSObject : AnyObject]) {
+        self.documentID = dict["docid_str"] as! String
+    }
+}
 
 class ClarifaiResponse: NSObject {
     var statusCode: String

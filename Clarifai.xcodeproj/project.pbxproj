@@ -13,7 +13,6 @@
 		251B85EE1D16FF020002F0D6 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 251B85ED1D16FF020002F0D6 /* Launch Screen.storyboard */; };
 		251B85F01D171DD60002F0D6 /* RecognizerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 251B85EF1D171DD60002F0D6 /* RecognizerViewController.swift */; };
 		251B85F21D1746700002F0D6 /* Clarifai.swift in Sources */ = {isa = PBXBuildFile; fileRef = 251B85F11D1746700002F0D6 /* Clarifai.swift */; };
-		251B85F51D17B2C80002F0D6 /* AFNetworking.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 251B85F31D17B2C80002F0D6 /* AFNetworking.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -25,7 +24,6 @@
 		251B85ED1D16FF020002F0D6 /* Launch Screen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
 		251B85EF1D171DD60002F0D6 /* RecognizerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecognizerViewController.swift; sourceTree = "<group>"; wrapsLines = 0; };
 		251B85F11D1746700002F0D6 /* Clarifai.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Clarifai.swift; sourceTree = "<group>"; wrapsLines = 0; };
-		251B85F31D17B2C80002F0D6 /* AFNetworking.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AFNetworking.framework; path = Carthage/Build/iOS/AFNetworking.framework; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -33,7 +31,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				251B85F51D17B2C80002F0D6 /* AFNetworking.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -43,7 +40,6 @@
 		251B85C51D1660290002F0D6 = {
 			isa = PBXGroup;
 			children = (
-				251B85F31D17B2C80002F0D6 /* AFNetworking.framework */,
 				251B85D01D1660290002F0D6 /* Clarifai */,
 				251B85CF1D1660290002F0D6 /* Products */,
 			);
@@ -144,7 +140,7 @@
 			files = (
 			);
 			inputPaths = (
-				"$(SRCROOT)/Carthage/Build/iOS/AFNetworking.framework",
+				"$(SRCROOT)/Carthage/Build/iOS/Alamofire.framework",
 			);
 			outputPaths = (
 			);

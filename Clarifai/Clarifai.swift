@@ -120,16 +120,16 @@ class Clarifai {
     }
     
     /** Recognize components of one or more images via UIImage */
-    func recognize(type: RecognitionType = .Tag, image: Array<UIImage>, model: TagModel = .General, completion: (AnyObject?, NSError?) -> Void) {
+    func recognize(type: RecognitionType = .Tag, image: Array<UIImage>, model: TagModel = .General, completion: (Response?, NSError?) -> Void) {
         self.process(type, dataInputType: .Image, data: image, model: model, completion: completion)
     }
     
     /** Recognize components of one or more images via string URL */
-    func recognize(type: RecognitionType = .Tag, url: Array<String>, model: TagModel = .General, completion: (AnyObject?, NSError?) -> Void) {
+    func recognize(type: RecognitionType = .Tag, url: Array<String>, model: TagModel = .General, completion: (Response?, NSError?) -> Void) {
         self.process(type, dataInputType: .URL, data: url, model: model, completion: completion)
     }
 
-    private func process(type: RecognitionType, dataInputType: DataInputType, data: Array<AnyObject>, model: TagModel, completion: (AnyObject?, NSError?) -> Void) {
+    private func process(type: RecognitionType, dataInputType: DataInputType, data: Array<AnyObject>, model: TagModel, completion: (Response?, NSError?) -> Void) {
         self.validateAccessToken { (error) in
             if error != nil {
                 return completion(nil, error)
@@ -152,6 +152,9 @@ class Clarifai {
                     }
                 case .Image:
                     for image in data as! Array<UIImage> {
+                        // We are reducing the size and quality of the input image so it will
+                        //   consume less data when transfering over to Clarifai. This has very
+                        //   little effect on the processing.
                         let size = CGSizeMake(320, 320 * image.size.height / image.size.width)
                         
                         UIGraphicsBeginImageContext(size)
@@ -172,8 +175,8 @@ class Clarifai {
                     upload.validate().responseJSON { response in
                         switch response.result {
                         case .Success(let result):
-//                            let results = ClarifaiResponse(type: type, dictionary: result as! Dictionary<NSObject, AnyObject>)
-                            completion(result, nil)
+                            let results = Response(type: type, data: result as! Dictionary<NSObject, AnyObject>)
+                            completion(results, nil)
                         case .Failure(let error):
                             completion(nil, error)
                         }
@@ -182,6 +185,108 @@ class Clarifai {
                     print(encodingError)
                 }
             })
+        }
+    }
+    
+    class RecognitionTag: NSObject {
+        var classLabel: String
+        var probability: Float
+        var conceptId: String
+        
+        init(classLabel label: String, probability prob: Float, conceptId conId: String) {
+            classLabel = label
+            probability = prob
+            conceptId = conId
+        }
+    }
+    
+    class RecognitionColor: NSObject {
+        var density: Float
+        var hex: String
+        var w3c: Dictionary<String, String>
+        
+        init(colorData: Dictionary<NSObject, AnyObject>) {
+            density = colorData["density"] as! Float
+            hex = colorData["hex"] as! String
+            w3c = [
+                "hex": colorData["w3c"]!["hex"] as! String,
+                "name": colorData["w3c"]!["name"] as! String
+            ]
+        }
+        
+        // Thanks to:
+        // https://gist.github.com/arshad/de147c42d7b3063ef7bc#gistcomment-1733974
+        func toColor() -> UIColor {
+            var colorString: String = hex.stringByTrimmingCharactersInSet(NSCharacterSet.whitespaceAndNewlineCharacterSet()).uppercaseString
+            colorString = (colorString as NSString).substringFromIndex(1)
+            
+            let red: String = (colorString as NSString).substringToIndex(2)
+            let green = ((colorString as NSString).substringFromIndex(2) as NSString).substringToIndex(2)
+            let blue = ((colorString as NSString).substringFromIndex(4) as NSString).substringToIndex(2)
+            
+            var r: CUnsignedInt = 0, g: CUnsignedInt = 0, b: CUnsignedInt = 0;
+            NSScanner(string: red).scanHexInt(&r)
+            NSScanner(string: green).scanHexInt(&g)
+            NSScanner(string: blue).scanHexInt(&b)
+            
+            return UIColor(red: CGFloat(r) / CGFloat(255.0), green: CGFloat(g) / CGFloat(255.0), blue: CGFloat(b) / CGFloat(255.0), alpha: CGFloat(1))
+        }
+    }
+    
+    class Result: NSObject {
+        var recognitionType: RecognitionType
+        var docId: String
+        var tags: Array<RecognitionTag>?
+        var colors: Array<RecognitionColor>?
+        
+        init(type: RecognitionType, data: Dictionary<NSObject, AnyObject>) {
+            self.recognitionType = type
+            self.docId = data["docid_str"] as! String
+            
+            switch type {
+            case .Tag:
+                tags = []
+                
+                // We have to deconstruct the tag results here and not in RecognitionTag
+                //   because the returned JSON groups classes, probabilities, and conceptIds
+                //   seperately.
+                let classLabels = data["result"]!["tag"]!!["classes"] as! Array<String>
+                let probabilities = data["result"]!["tag"]!!["probs"] as! Array<Float>
+                let conceptIds = data["result"]!["tag"]!!["concept_ids"] as! Array<String>
+                
+                for (index, label) in classLabels.enumerate() {
+                    let probability = probabilities[index]
+                    let conceptId = conceptIds[index]
+                    
+                    tags?.append(RecognitionTag(classLabel: label, probability: probability, conceptId: conceptId))
+                }
+            case .Color:
+                colors = []
+                
+                // We are able to pass all the data to RecognitionColor and deconstruct it there
+                //   since the returned JSON contains colors in self-contained objects
+                for colorResult in data["colors"]! as! Array<Dictionary<NSObject, AnyObject>> {
+                    colors?.append(RecognitionColor(colorData: colorResult))
+                }
+            }
+        }
+    }
+    
+    class Response: NSObject {
+        var statusCode: String
+        var statusMessage: String
+        var recognitionType: RecognitionType
+        var results: Array<Result> = []
+        
+        init(type: RecognitionType, data: Dictionary<NSObject, AnyObject>) {
+            self.recognitionType = type
+            self.statusCode = data["status_code"] as! String
+            self.statusMessage = data["status_msg"] as! String
+            
+            for resultData in data["results"] as! Array<Dictionary<NSObject, AnyObject>> {
+                let result = Result(type: type, data: resultData)
+                results.append(result)
+            }
         }
     }
     

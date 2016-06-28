@@ -39,7 +39,7 @@ If only one of a given type is present in the array, the standard endpoints will
 
 When using images, they are intentionally reduced in size and quality to use less data when uploading to Clarifai's servers. Generally this shouldn't affect the overall processing of an image, but feel free to tweak as needed. When using URLs, the strings are not validated so it's up to you to make sure proper image URLs are being passed in.
 
-**model** | `Clarifai.TagModel` (`enum`)
+**`model`** | `Clarifai.TagModel` (`enum`)
 
 Default: `.General`
 

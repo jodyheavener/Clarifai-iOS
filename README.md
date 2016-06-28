@@ -107,3 +107,21 @@ A single color returned from a recognition request.
 - [ ] Add support for Languages endpoint
 - [ ] Add support for Usage endpoint
 - [ ] Add method to `Clarifai.Result` that restricts tags/colors to certain results, like in the [Javascript client](https://github.com/Clarifai/clarifai-javascript#get-tags-for-an-image-via-url-and-restrict-the-tags-returned)
+
+## Example app
+
+There is a very rudimentary app available in the `example` directory. To get that up and running you'll need to have [Carthage](https://github.com/Carthage/Carthage) installed, and then do the following:
+
+* Clone this entire repo
+* `cd example`
+* `carthage update --platform iOS`
+* Fill in your Clarifai credentials (`clarifaiID ` and `clarifaiSecret `) in [example/Clarifai/MainViewController.swift](https://github.com/jodyheavener/Clarifai-iOS/blob/master/example/Clarifai/MainViewController.swift)
+* Run the project in your iOS simulator or device
+
+## License
+
+This repository is released under the Apache License. See LICENSE for details.
+
+## Contributing
+
+If you find a bug or want to improve this library, just submit a pull request. Take care to maintain existing code style. Thanks!

@@ -8,8 +8,10 @@
 
 import UIKit
 
+// Fill these in with your own API credentials
 let clarifaiID = ""
 let clarifaiSecret = ""
+
 var clarifai: Clarifai?
 
 class MainViewController: UIViewController, UIImagePickerControllerDelegate, UINavigationControllerDelegate {

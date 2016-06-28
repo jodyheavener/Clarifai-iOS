@@ -12,7 +12,7 @@
 		251B85EC1D16FE9F0002F0D6 /* Media.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 251B85EB1D16FE9F0002F0D6 /* Media.xcassets */; };
 		251B85EE1D16FF020002F0D6 /* Launch Screen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 251B85ED1D16FF020002F0D6 /* Launch Screen.storyboard */; };
 		251B85F01D171DD60002F0D6 /* RecognizerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 251B85EF1D171DD60002F0D6 /* RecognizerViewController.swift */; };
-		251B85F21D1746700002F0D6 /* Clarifai.swift in Sources */ = {isa = PBXBuildFile; fileRef = 251B85F11D1746700002F0D6 /* Clarifai.swift */; };
+		25D053251D22D53700818384 /* Clarifai.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25D053241D22D53700818384 /* Clarifai.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -23,7 +23,7 @@
 		251B85EB1D16FE9F0002F0D6 /* Media.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Media.xcassets; sourceTree = "<group>"; };
 		251B85ED1D16FF020002F0D6 /* Launch Screen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = "Launch Screen.storyboard"; sourceTree = "<group>"; };
 		251B85EF1D171DD60002F0D6 /* RecognizerViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = RecognizerViewController.swift; sourceTree = "<group>"; wrapsLines = 0; };
-		251B85F11D1746700002F0D6 /* Clarifai.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Clarifai.swift; sourceTree = "<group>"; wrapsLines = 0; };
+		25D053241D22D53700818384 /* Clarifai.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = Clarifai.swift; path = ../../Clarifai.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -59,7 +59,7 @@
 				251B85D11D1660290002F0D6 /* AppDelegate.swift */,
 				251B85D31D1660290002F0D6 /* MainViewController.swift */,
 				251B85EF1D171DD60002F0D6 /* RecognizerViewController.swift */,
-				251B85F11D1746700002F0D6 /* Clarifai.swift */,
+				25D053241D22D53700818384 /* Clarifai.swift */,
 				251B85DD1D1660290002F0D6 /* Info.plist */,
 				251B85EB1D16FE9F0002F0D6 /* Media.xcassets */,
 				251B85ED1D16FF020002F0D6 /* Launch Screen.storyboard */,
@@ -155,7 +155,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				251B85F21D1746700002F0D6 /* Clarifai.swift in Sources */,
+				25D053251D22D53700818384 /* Clarifai.swift in Sources */,
 				251B85F01D171DD60002F0D6 /* RecognizerViewController.swift in Sources */,
 				251B85D41D1660290002F0D6 /* MainViewController.swift in Sources */,
 				251B85D21D1660290002F0D6 /* AppDelegate.swift in Sources */,

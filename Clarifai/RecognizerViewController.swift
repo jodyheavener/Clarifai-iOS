@@ -43,11 +43,17 @@ class RecognizerViewController: UIViewController {
         if let image = selectedImage {
             imagePreviewView.image = image
             
-            clarifai.tag(image, completion: { (results, error) in
-                if error == nil {
-                    let tag = results?.tags![0]
-                    self.setupResultsView((tag?.labels)!)
+            clarifai.recognize(image: [image], completion: { (response, error) in
+                if error != nil {
+                    return print(error)
                 }
+
+                var labels: Array<String> = []
+                for tag in response!.results[0].tags! {
+                    labels.append(tag.classLabel)
+                }
+                
+                self.setupResultsView(labels)
             })
         }
         
@@ -57,11 +63,17 @@ class RecognizerViewController: UIViewController {
                 imagePreviewView.image = UIImage(data:data!)
             }
             
-            clarifai.tag(url, completion: { (results, error) in
-                if error == nil {
-                    let tag = results?.tags![0]
-                    self.setupResultsView((tag?.labels)!)
+            clarifai.recognize(url: [url], completion: { (response, error) in
+                if error != nil {
+                    return print(error)
                 }
+                
+                var labels: Array<String> = []
+                for tag in response!.results[0].tags! {
+                    labels.append(tag.classLabel)
+                }
+                
+                self.setupResultsView(labels)
             })
         }
     }
